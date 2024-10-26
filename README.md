@@ -177,7 +177,10 @@ pip install -r requirements.txt -v
 ## Disclaimer
 
 This bot is for educational purposes only. Use at your own risk.
+
 Please don't spam if you don't want the api down
+
+Try the free api in blumfree.py, if you already have key try blum.py
 
 ## API Key
 

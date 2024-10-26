@@ -1,5 +1,5 @@
 import requests
-import json, os
+import json, os, sys
 import time
 import random
 import signal
@@ -15,7 +15,7 @@ CYAN = "\033[96m"
 RESET = "\033[0m"
 GREEN = "\033[92m"
 
-PAYLOAD_SERVER_URL = "https://blum-toga-c3d9617e40ff.herokuapp.com/api/game"
+PAYLOAD_SERVER_URL = "https://blum-game-847f35d5cc2e.herokuapp.com"
 should_exit = False
 run_config = {
     'min_clover': 200,
@@ -283,11 +283,54 @@ def play_game(access_token, username, retries=3, delay=2):
             time.sleep(delay)
     return None, None
 
+try:
+    del input
+except:
+    pass
+
+def test_api_key():
+    while True:
+        print(f"{GREEN}Enter API Key: {RESET}", end='')
+        api_key = input().strip()
+        headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': api_key
+        }
+        try:
+            response = requests.get(
+                f"{PAYLOAD_SERVER_URL}/api/key",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                print(f"{GREEN}API Key valid!{RESET}")
+                return api_key
+            elif response.status_code == 401:
+                print(f"{RED}Invalid API Key! Please try again.{RESET}")
+                continue
+            elif response.status_code == 403:
+                print(f"{RED}API Key missing! Please try again.{RESET}")
+                continue
+            else:
+                print(f"{YELLOW}Unexpected response. Status: {response.status_code}{RESET}")
+                retry = input(f"{YELLOW}Do you want to try again? (y/n): {RESET}").lower()
+                if retry != 'y':
+                    sys.exit(1)
+        except Exception as e:
+            print(f"{RED}Error testing API Key: {e}{RESET}")
+            retry = input(f"{YELLOW}Do you want to try again? (y/n): {RESET}").lower()
+            if retry != 'y':
+                sys.exit(1)
+
 def generate_payload(game_id, clover_amount, dogs_eligible=False, max_retries=3, delay=2):
     global should_exit
     payload_data = {
         "gameId": game_id,
         "points": clover_amount
+    }
+    headers = {
+        'Content-Type':'application/json',
+        'X-API-Key':f"{API_KEY}"
     }
     
     dogs = None
@@ -298,7 +341,7 @@ def generate_payload(game_id, clover_amount, dogs_eligible=False, max_retries=3,
     
     for attempt in range(max_retries):
         try:
-            response = requests.post(PAYLOAD_SERVER_URL, json=payload_data)
+            response = requests.post(f"{PAYLOAD_SERVER_URL}/api/game", json=payload_data, headers=headers)
             
             if response.status_code == 200:
                 response_json = response.json()
@@ -557,7 +600,7 @@ def play_process(query):
                 run_config['max_clover']
             ))
 
-            result = generate_payload(game_id, clover_amount, dogs_eligible)
+            result = generate_payload(game_id, clover_amount, dogs_eligible, )
             if result is None or result[0] is None: 
                 print(f"[{username}] : {RED}Payload generation failed. Stopping game process.{RESET}")
                 should_exit = True
@@ -767,7 +810,7 @@ def auto_loop_process(queries):
                     
             if not should_exit:
                 print(f"\n{CYAN}Play game completed. Waiting 5 hours before next game...{RESET}")
-                for remaining in range(180000, 0, -1):
+                for remaining in range(18000, 0, -1):
                     if should_exit:
                         break
                     hours = remaining // 3600
@@ -829,7 +872,7 @@ def check_account_info(query):
 
 def main():
     print_header()
-    global should_exit
+    global should_exit, API_KEY
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -839,6 +882,12 @@ def main():
         if not queries:
             print(f"{RED}No queries found in query.txt. Exiting...{RESET}")
             return
+
+        print(f"{CYAN}{'='*52}{RESET}")
+        print(f"{YELLOW}API Key Authentication{RESET}")
+        print(f"{CYAN}{'='*52}{RESET}")
+        API_KEY = test_api_key()
+        print(f"{CYAN}{'='*52}{RESET}")
 
         while True:
             choice = show_menu()

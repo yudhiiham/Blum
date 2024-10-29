@@ -15,7 +15,7 @@ CYAN = "\033[96m"
 RESET = "\033[0m"
 GREEN = "\033[92m"
 
-PAYLOAD_SERVER_URL = "https://blum-game-847f35d5cc2e.herokuapp.com"
+PAYLOAD_SERVER_URL = "https://api.ggtog.live"
 should_exit = False
 run_config = {
     'min_clover': 200,
